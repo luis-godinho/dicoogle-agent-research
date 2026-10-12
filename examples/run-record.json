@@ -1,0 +1,263 @@
+{
+  "schema_version": "0.1",
+  "run_id": "run-demo-001",
+  "request_id": "request-demo-001",
+  "user_id": "researcher-demo",
+  "plan_id": "plan-demo-001",
+  "plan_revision": 1,
+  "plan_digest": "122a7f2930471ffbdb2bb21239be8bf5238cc30e96075e4983c650c3bd7eb602",
+  "catalog_digest": "f0e50b0af99f9b1b02887c417dd71b714a8fe71b584d55ee3f77b6040a6964c7",
+  "context_id": "context-demo-001",
+  "context_revision": 1,
+  "policy_id": "test-readonly-policy",
+  "policy_version": "0.1",
+  "ruleset_version": "0.1",
+  "planner": {
+    "mode": "manual",
+    "model": null,
+    "prompt_version": null
+  },
+  "adapter_versions": {
+    "metadata-inspector": "mock-0.1",
+    "compatibility-assessor": "mock-0.1",
+    "report-generator": "mock-0.1"
+  },
+  "status": "completed",
+  "plan_snapshot": {
+    "schema_version": "0.1",
+    "plan_id": "plan-demo-001",
+    "revision": 1,
+    "goal": "Assess metadata compatibility of the selected series with preview-metadata-profile@0.1.",
+    "catalog": {
+      "id": "reference-catalog",
+      "version": "0.1",
+      "digest": "f0e50b0af99f9b1b02887c417dd71b714a8fe71b584d55ee3f77b6040a6964c7"
+    },
+    "context_inputs": {
+      "selected_series": {
+        "type": "DicomSeriesRef",
+        "reference_id": "series-demo-001"
+      }
+    },
+    "nodes": [
+      {
+        "node_id": "n1",
+        "tool_id": "inspect_series_metadata",
+        "tool_version": "0.1",
+        "parameters": {},
+        "bindings": {
+          "series": {
+            "source": "context",
+            "key": "selected_series"
+          }
+        }
+      },
+      {
+        "node_id": "n2",
+        "tool_id": "assess_metadata_compatibility",
+        "tool_version": "0.1",
+        "parameters": {
+          "profile_id": "preview-metadata-profile",
+          "profile_version": "0.1"
+        },
+        "bindings": {
+          "metadata": {
+            "source": "node_output",
+            "node_id": "n1",
+            "output": "metadata"
+          }
+        }
+      },
+      {
+        "node_id": "n3",
+        "tool_id": "generate_compatibility_report",
+        "tool_version": "0.1",
+        "parameters": {
+          "format": "json"
+        },
+        "bindings": {
+          "assessment": {
+            "source": "node_output",
+            "node_id": "n2",
+            "output": "assessment"
+          }
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "n1",
+        "to": "n2"
+      },
+      {
+        "from": "n2",
+        "to": "n3"
+      }
+    ]
+  },
+  "events": [
+    {
+      "event_id": "e1",
+      "sequence": 1,
+      "timestamp": "2026-10-08T10:00:01Z",
+      "kind": "proposed",
+      "actor_id": "synthetic-test-runner",
+      "details": {}
+    },
+    {
+      "event_id": "e2",
+      "sequence": 2,
+      "timestamp": "2026-10-08T10:00:02Z",
+      "kind": "validated",
+      "actor_id": "synthetic-test-runner",
+      "details": {
+        "outcome": "valid",
+        "ruleset_version": "0.1",
+        "issues": []
+      }
+    },
+    {
+      "event_id": "e3",
+      "sequence": 3,
+      "timestamp": "2026-10-08T10:00:03Z",
+      "kind": "authorization_checked",
+      "actor_id": "synthetic-test-runner",
+      "details": {
+        "policy_id": "test-readonly-policy",
+        "policy_version": "0.1",
+        "approval_required": false,
+        "access": "satisfied"
+      }
+    },
+    {
+      "event_id": "e4",
+      "sequence": 4,
+      "timestamp": "2026-10-08T10:00:04Z",
+      "kind": "execution_started",
+      "actor_id": "synthetic-test-runner",
+      "details": {}
+    },
+    {
+      "event_id": "e5",
+      "sequence": 5,
+      "timestamp": "2026-10-08T10:00:05Z",
+      "kind": "step_started",
+      "actor_id": "synthetic-test-runner",
+      "details": {},
+      "node_id": "n1",
+      "attempt": 1
+    },
+    {
+      "event_id": "e6",
+      "sequence": 6,
+      "timestamp": "2026-10-08T10:00:06Z",
+      "kind": "step_completed",
+      "actor_id": "synthetic-test-runner",
+      "details": {},
+      "node_id": "n1",
+      "attempt": 1
+    },
+    {
+      "event_id": "e7",
+      "sequence": 7,
+      "timestamp": "2026-10-08T10:00:07Z",
+      "kind": "step_started",
+      "actor_id": "synthetic-test-runner",
+      "details": {},
+      "node_id": "n2",
+      "attempt": 1
+    },
+    {
+      "event_id": "e8",
+      "sequence": 8,
+      "timestamp": "2026-10-08T10:00:08Z",
+      "kind": "step_completed",
+      "actor_id": "synthetic-test-runner",
+      "details": {},
+      "node_id": "n2",
+      "attempt": 1
+    },
+    {
+      "event_id": "e9",
+      "sequence": 9,
+      "timestamp": "2026-10-08T10:00:09Z",
+      "kind": "step_started",
+      "actor_id": "synthetic-test-runner",
+      "details": {},
+      "node_id": "n3",
+      "attempt": 1
+    },
+    {
+      "event_id": "e10",
+      "sequence": 10,
+      "timestamp": "2026-10-08T10:00:10Z",
+      "kind": "step_completed",
+      "actor_id": "synthetic-test-runner",
+      "details": {},
+      "node_id": "n3",
+      "attempt": 1
+    },
+    {
+      "event_id": "e11",
+      "sequence": 11,
+      "timestamp": "2026-10-08T10:00:11Z",
+      "kind": "execution_completed",
+      "actor_id": "synthetic-test-runner",
+      "details": {}
+    }
+  ],
+  "attempts": [
+    {
+      "node_id": "n1",
+      "tool_id": "inspect_series_metadata",
+      "tool_version": "0.1",
+      "attempt": 1,
+      "status": "completed",
+      "input_refs": [
+        "series-demo-001"
+      ],
+      "output_refs": [
+        "metadata-demo-001"
+      ],
+      "error": null
+    },
+    {
+      "node_id": "n2",
+      "tool_id": "assess_metadata_compatibility",
+      "tool_version": "0.1",
+      "attempt": 1,
+      "status": "completed",
+      "input_refs": [
+        "metadata-demo-001"
+      ],
+      "output_refs": [
+        "assessment-demo-001"
+      ],
+      "error": null
+    },
+    {
+      "node_id": "n3",
+      "tool_id": "generate_compatibility_report",
+      "tool_version": "0.1",
+      "attempt": 1,
+      "status": "completed",
+      "input_refs": [
+        "assessment-demo-001"
+      ],
+      "output_refs": [
+        "report-demo-001"
+      ],
+      "error": null
+    }
+  ],
+  "artifact_refs": [
+    {
+      "artifact_id": "report-demo-001",
+      "type": "ReportArtifactRef",
+      "media_type": "application/json",
+      "storage_key": "internal:reports/report-demo-001",
+      "assessment_id": "assessment-demo-001",
+      "content_digest": "a013852f6b5ddbcaad040bd29657fe312bad94ae9ccaf9e3421718a96066586a"
+    }
+  ]
+}

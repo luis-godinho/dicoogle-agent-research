@@ -1,0 +1,8 @@
+{
+  "artifact_id": "report-demo-001",
+  "type": "ReportArtifactRef",
+  "media_type": "application/json",
+  "storage_key": "internal:reports/report-demo-001",
+  "assessment_id": "assessment-demo-001",
+  "content_digest": "a013852f6b5ddbcaad040bd29657fe312bad94ae9ccaf9e3421718a96066586a"
+}

@@ -1,0 +1,152 @@
+{
+  "catalog_id": "reference-catalog",
+  "version": "0.1",
+  "tools": [
+    {
+      "schema_version": "0.1",
+      "id": "inspect_series_metadata",
+      "version": "0.1",
+      "inputs": {
+        "series": "DicomSeriesRef"
+      },
+      "outputs": {
+        "metadata": "SeriesMetadataSnapshot"
+      },
+      "parameters": {
+        "required": [],
+        "properties": {},
+        "additional_properties": false
+      },
+      "preconditions": [
+        {
+          "id": "resolved_target",
+          "phase": "planning"
+        },
+        {
+          "id": "metadata_access",
+          "phase": "planning_and_before_step"
+        }
+      ],
+      "effects": [
+        "read_archive"
+      ],
+      "approval": "policy",
+      "executor_key": "metadata-inspector",
+      "limits": {
+        "timeout_seconds": 30,
+        "max_attempts": 1
+      },
+      "failure_codes": [
+        "ACCESS_DENIED",
+        "OBJECT_UNAVAILABLE",
+        "ADAPTER_ERROR",
+        "TIMEOUT"
+      ]
+    },
+    {
+      "schema_version": "0.1",
+      "id": "assess_metadata_compatibility",
+      "version": "0.1",
+      "inputs": {
+        "metadata": "SeriesMetadataSnapshot"
+      },
+      "outputs": {
+        "assessment": "CompatibilityAssessment"
+      },
+      "parameters": {
+        "required": [
+          "profile_id",
+          "profile_version"
+        ],
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "enum": [
+              "preview-metadata-profile"
+            ]
+          },
+          "profile_version": {
+            "type": "string",
+            "enum": [
+              "0.1"
+            ]
+          }
+        },
+        "additional_properties": false
+      },
+      "preconditions": [
+        {
+          "id": "profile_exists",
+          "phase": "planning"
+        },
+        {
+          "id": "metadata_snapshot_available",
+          "phase": "before_step"
+        }
+      ],
+      "effects": [
+        "compute_only"
+      ],
+      "approval": "policy",
+      "executor_key": "compatibility-assessor",
+      "limits": {
+        "timeout_seconds": 30,
+        "max_attempts": 1
+      },
+      "failure_codes": [
+        "UNKNOWN_PROFILE",
+        "INVALID_TOOL_OUTPUT",
+        "TIMEOUT"
+      ]
+    },
+    {
+      "schema_version": "0.1",
+      "id": "generate_compatibility_report",
+      "version": "0.1",
+      "inputs": {
+        "assessment": "CompatibilityAssessment"
+      },
+      "outputs": {
+        "report": "ReportArtifactRef"
+      },
+      "parameters": {
+        "required": [
+          "format"
+        ],
+        "properties": {
+          "format": {
+            "type": "string",
+            "enum": [
+              "json"
+            ]
+          }
+        },
+        "additional_properties": false
+      },
+      "preconditions": [
+        {
+          "id": "assessment_available",
+          "phase": "before_step"
+        },
+        {
+          "id": "internal_report_storage_allowed",
+          "phase": "planning_and_before_step"
+        }
+      ],
+      "effects": [
+        "write_internal_artifact"
+      ],
+      "approval": "policy",
+      "executor_key": "report-generator",
+      "limits": {
+        "timeout_seconds": 30,
+        "max_attempts": 1
+      },
+      "failure_codes": [
+        "ARTIFACT_WRITE_FAILED",
+        "INVALID_TOOL_OUTPUT",
+        "TIMEOUT"
+      ]
+    }
+  ]
+}

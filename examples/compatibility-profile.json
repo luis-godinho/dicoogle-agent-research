@@ -1,0 +1,29 @@
+{
+  "profile_id": "preview-metadata-profile",
+  "version": "0.1",
+  "scope": "metadata_only",
+  "rules": [
+    {
+      "id": "C1",
+      "field": "modality",
+      "operator": "equals",
+      "value": "CT"
+    },
+    {
+      "id": "C2",
+      "field": "sop_class",
+      "operator": "equals",
+      "value": "CT_IMAGE_STORAGE"
+    },
+    {
+      "id": "C3",
+      "field": "rows",
+      "operator": "positive_integer"
+    },
+    {
+      "id": "C4",
+      "field": "columns",
+      "operator": "positive_integer"
+    }
+  ]
+}

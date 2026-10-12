@@ -1,0 +1,54 @@
+{
+  "snapshot_id": "metadata-demo-001",
+  "reference_id": "series-demo-001",
+  "scope": "resolved_instance_manifest",
+  "observed_at": "2026-10-08T10:00:00Z",
+  "instance_uids": [
+    "2.25.10003",
+    "2.25.10004"
+  ],
+  "instances": [
+    {
+      "sop_instance_uid": "2.25.10003",
+      "properties": {
+        "modality": {
+          "status": "known",
+          "value": "CT"
+        },
+        "sop_class": {
+          "status": "known",
+          "value": "CT_IMAGE_STORAGE"
+        },
+        "rows": {
+          "status": "known",
+          "value": 512
+        },
+        "columns": {
+          "status": "known",
+          "value": 512
+        }
+      }
+    },
+    {
+      "sop_instance_uid": "2.25.10004",
+      "properties": {
+        "modality": {
+          "status": "known",
+          "value": "CT"
+        },
+        "sop_class": {
+          "status": "known",
+          "value": "CT_IMAGE_STORAGE"
+        },
+        "rows": {
+          "status": "known",
+          "value": 512
+        },
+        "columns": {
+          "status": "known",
+          "value": 512
+        }
+      }
+    }
+  ]
+}

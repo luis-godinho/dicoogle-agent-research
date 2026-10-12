@@ -1,0 +1,8 @@
+{
+  "schema_version": "0.1",
+  "reference_id": "series-demo-001",
+  "level": "series",
+  "study_instance_uid": "2.25.10001",
+  "series_instance_uid": "2.25.10002",
+  "resolver_key": "fixture:series-demo-001"
+}

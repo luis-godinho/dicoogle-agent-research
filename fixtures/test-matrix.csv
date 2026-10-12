@@ -1,0 +1,23 @@
+id,stage,scenario,expected_outcome,expected_code
+T01-valid-plan,planning,valid-plan,admissible,
+T02-unknown-version,planning,unknown-version,invalid,UNKNOWN_TOOL_VERSION
+T03-cycle,planning,cycle,invalid,CYCLIC_PLAN
+T04-type-mismatch,planning,type-mismatch,invalid,TYPE_MISMATCH
+T05-missing-parameter,planning,missing-parameter,invalid,INVALID_PARAMETER
+T06-missing-input,planning,missing-input,invalid,MISSING_INPUT
+T07-missing-dependency,planning,missing-dependency,invalid,MISSING_DEPENDENCY
+T08-access-denied,planning,access-denied,blocked,ACCESS_DENIED
+T09-access-unknown,planning,access-unknown,blocked,ACCESS_UNKNOWN
+T10-stale-catalog,planning,stale-catalog,invalid,CATALOG_MISMATCH
+T11-unknown-output,planning,unknown-output,invalid,UNKNOWN_OUTPUT
+T12-approval-required,authorization,approval-required,blocked,APPROVAL_REQUIRED
+T13-artifact-effect-denied,authorization,artifact-effect-denied,blocked,EFFECT_DENIED
+T14-metadata-unknown,runtime,One required property unknown; no known violations,completed / indeterminate,
+T15-incompatible-series,runtime,One instance modality MR; profile requires CT,completed / incompatible,
+T16-adapter-error,runtime,Inspector cannot retrieve one manifest instance,failed; dependent nodes not run,ADAPTER_ERROR
+T17-invalid-output,runtime,Inspector returns wrong output type,failed; dependent nodes not run,INVALID_TOOL_OUTPUT
+T18-empty-manifest,runtime,Manifest is empty and no known violations,completed / indeterminate,
+T19-approval-mismatch,authorization,Trusted approval refers to a different plan digest,blocked,APPROVAL_MISMATCH
+T20-ambiguous-target,context,Two candidates and no selection criterion,awaiting_clarification; no execution,
+T21-lost-access,before_step,Access revoked after planning validation,blocked; affected step not run,ACCESS_DENIED
+T22-incomplete-ledger,completion,Completed attempt lacks required output reference,provenance check fails,PROVENANCE_INCOMPLETE

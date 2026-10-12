@@ -1,0 +1,35 @@
+{
+  "context_id": "context-demo-001",
+  "revision": 1,
+  "user_id": "researcher-demo",
+  "selection_status": "resolved",
+  "references": [
+    {
+      "schema_version": "0.1",
+      "reference_id": "series-demo-001",
+      "level": "series",
+      "study_instance_uid": "2.25.10001",
+      "series_instance_uid": "2.25.10002",
+      "resolver_key": "fixture:series-demo-001"
+    }
+  ],
+  "object_available": "satisfied",
+  "metadata_access": "satisfied",
+  "internal_report_storage_allowed": "satisfied",
+  "policy_id": "test-readonly-policy",
+  "policy_version": "0.1",
+  "execution_enabled": true,
+  "approval_required": false,
+  "approvals": [],
+  "available_profiles": [
+    {
+      "id": "preview-metadata-profile",
+      "version": "0.1"
+    }
+  ],
+  "adapter_versions": {
+    "metadata-inspector": "mock-0.1",
+    "compatibility-assessor": "mock-0.1",
+    "report-generator": "mock-0.1"
+  }
+}

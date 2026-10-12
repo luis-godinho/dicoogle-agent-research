@@ -1,0 +1,72 @@
+{
+  "schema_version": "0.1",
+  "plan_id": "plan-demo-001",
+  "revision": 1,
+  "goal": "Assess metadata compatibility of the selected series with preview-metadata-profile@0.1.",
+  "catalog": {
+    "id": "reference-catalog",
+    "version": "0.1",
+    "digest": "f0e50b0af99f9b1b02887c417dd71b714a8fe71b584d55ee3f77b6040a6964c7"
+  },
+  "context_inputs": {
+    "selected_series": {
+      "type": "DicomSeriesRef",
+      "reference_id": "series-demo-001"
+    }
+  },
+  "nodes": [
+    {
+      "node_id": "n1",
+      "tool_id": "inspect_series_metadata",
+      "tool_version": "0.1",
+      "parameters": {},
+      "bindings": {
+        "series": {
+          "source": "context",
+          "key": "selected_series"
+        }
+      }
+    },
+    {
+      "node_id": "n2",
+      "tool_id": "assess_metadata_compatibility",
+      "tool_version": "0.1",
+      "parameters": {
+        "profile_id": "preview-metadata-profile",
+        "profile_version": "0.1"
+      },
+      "bindings": {
+        "metadata": {
+          "source": "node_output",
+          "node_id": "n1",
+          "output": "metadata"
+        }
+      }
+    },
+    {
+      "node_id": "n3",
+      "tool_id": "generate_compatibility_report",
+      "tool_version": "0.1",
+      "parameters": {
+        "format": "json"
+      },
+      "bindings": {
+        "assessment": {
+          "source": "node_output",
+          "node_id": "n2",
+          "output": "assessment"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2"
+    },
+    {
+      "from": "n2",
+      "to": "n3"
+    }
+  ]
+}

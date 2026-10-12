@@ -1,0 +1,302 @@
+{
+  "status": "expected test fixtures; not executed",
+  "catalog": {
+    "catalog_id": "reference-catalog",
+    "version": "0.1",
+    "tools": [
+      {
+        "schema_version": "0.1",
+        "id": "inspect_series_metadata",
+        "version": "0.1",
+        "inputs": {
+          "series": "DicomSeriesRef"
+        },
+        "outputs": {
+          "metadata": "SeriesMetadataSnapshot"
+        },
+        "parameters": {
+          "required": [],
+          "properties": {},
+          "additional_properties": false
+        },
+        "preconditions": [
+          {
+            "id": "resolved_target",
+            "phase": "planning"
+          },
+          {
+            "id": "metadata_access",
+            "phase": "planning_and_before_step"
+          }
+        ],
+        "effects": [
+          "read_archive"
+        ],
+        "approval": "policy",
+        "executor_key": "metadata-inspector",
+        "limits": {
+          "timeout_seconds": 30,
+          "max_attempts": 1
+        },
+        "failure_codes": [
+          "ACCESS_DENIED",
+          "OBJECT_UNAVAILABLE",
+          "ADAPTER_ERROR",
+          "TIMEOUT"
+        ]
+      },
+      {
+        "schema_version": "0.1",
+        "id": "assess_metadata_compatibility",
+        "version": "0.1",
+        "inputs": {
+          "metadata": "SeriesMetadataSnapshot"
+        },
+        "outputs": {
+          "assessment": "CompatibilityAssessment"
+        },
+        "parameters": {
+          "required": [
+            "profile_id",
+            "profile_version"
+          ],
+          "properties": {
+            "profile_id": {
+              "type": "string",
+              "enum": [
+                "preview-metadata-profile"
+              ]
+            },
+            "profile_version": {
+              "type": "string",
+              "enum": [
+                "0.1"
+              ]
+            }
+          },
+          "additional_properties": false
+        },
+        "preconditions": [
+          {
+            "id": "profile_exists",
+            "phase": "planning"
+          },
+          {
+            "id": "metadata_snapshot_available",
+            "phase": "before_step"
+          }
+        ],
+        "effects": [
+          "compute_only"
+        ],
+        "approval": "policy",
+        "executor_key": "compatibility-assessor",
+        "limits": {
+          "timeout_seconds": 30,
+          "max_attempts": 1
+        },
+        "failure_codes": [
+          "UNKNOWN_PROFILE",
+          "INVALID_TOOL_OUTPUT",
+          "TIMEOUT"
+        ]
+      },
+      {
+        "schema_version": "0.1",
+        "id": "generate_compatibility_report",
+        "version": "0.1",
+        "inputs": {
+          "assessment": "CompatibilityAssessment"
+        },
+        "outputs": {
+          "report": "ReportArtifactRef"
+        },
+        "parameters": {
+          "required": [
+            "format"
+          ],
+          "properties": {
+            "format": {
+              "type": "string",
+              "enum": [
+                "json"
+              ]
+            }
+          },
+          "additional_properties": false
+        },
+        "additional_properties": false,
+        "preconditions": [
+          {
+            "id": "assessment_available",
+            "phase": "before_step"
+          },
+          {
+            "id": "internal_report_storage_allowed",
+            "phase": "planning_and_before_step"
+          }
+        ],
+        "effects": [
+          "write_internal_artifact"
+        ],
+        "approval": "policy",
+        "executor_key": "report-generator",
+        "limits": {
+          "timeout_seconds": 30,
+          "max_attempts": 1
+        },
+        "failure_codes": [
+          "ARTIFACT_WRITE_FAILED",
+          "INVALID_TOOL_OUTPUT",
+          "TIMEOUT"
+        ]
+      }
+    ]
+  },
+  "profile": {
+    "profile_id": "preview-metadata-profile",
+    "version": "0.1",
+    "scope": "metadata_only",
+    "rules": [
+      {
+        "id": "C1",
+        "field": "modality",
+        "operator": "equals",
+        "value": "CT"
+      },
+      {
+        "id": "C2",
+        "field": "sop_class",
+        "operator": "equals",
+        "value": "CT_IMAGE_STORAGE"
+      },
+      {
+        "id": "C3",
+        "field": "rows",
+        "operator": "positive_integer"
+      },
+      {
+        "id": "C4",
+        "field": "columns",
+        "operator": "positive_integer"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "id": "T01-valid-plan",
+      "plan": {
+        "schema_version": "0.1",
+        "plan_id": "plan-demo-001",
+        "revision": 1,
+        "goal": "Assess metadata compatibility of the selected series with preview-metadata-profile@0.1.",
+        "catalog": {
+          "id": "reference-catalog",
+          "version": "0.1",
+          "digest": "f0e50b0af99f9b1b02887c417dd71b714a8fe71b584d55ee3f77b6040a6964c7"
+        },
+        "context_inputs": {
+          "selected_series": {
+            "type": "DicomSeriesRef",
+            "reference_id": "series-demo-001"
+          }
+        },
+        "nodes": [
+          {
+            "node_id": "n1",
+            "tool_id": "inspect_series_metadata",
+            "tool_version": "0.1",
+            "parameters": {},
+            "bindings": {
+              "series": {
+                "source": "context",
+                "key": "selected_series"
+              }
+            }
+          },
+          {
+            "node_id": "n2",
+            "tool_id": "assess_metadata_compatibility",
+            "tool_version": "0.1",
+            "parameters": {
+              "profile_id": "preview-metadata-profile",
+              "profile_version": "0.1"
+            },
+            "bindings": {
+              "metadata": {
+                "source": "node_output",
+                "node_id": "n1",
+                "output": "metadata"
+              }
+            }
+          },
+          {
+            "node_id": "n3",
+            "tool_id": "generate_compatibility_report",
+            "tool_version": "0.1",
+            "parameters": {
+              "format": "json"
+            },
+            "bindings": {
+              "assessment": {
+                "source": "node_output",
+                "node_id": "n2",
+                "output": "assessment"
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "from": "n1",
+            "to": "n2"
+          },
+          {
+            "from": "n2",
+            "to": "n3"
+          }
+        ]
+      },
+      "context": {
+        "context_id": "context-demo-001",
+        "revision": 1,
+        "user_id": "researcher-demo",
+        "selection_status": "resolved",
+        "references": [
+          {
+            "schema_version": "0.1",
+            "reference_id": "series-demo-001",
+            "level": "series",
+            "study_instance_uid": "2.25.10001",
+            "series_instance_uid": "2.25.10002",
+            "resolver_key": "fixture:series-demo-001"
+          }
+        ],
+        "object_available": "satisfied",
+        "metadata_access": "satisfied",
+        "internal_report_storage_allowed": "satisfied",
+        "policy_id": "test-readonly-policy",
+        "policy_version": "0.1",
+        "execution_enabled": true,
+        "approval_required": false,
+        "approvals": [],
+        "available_profiles": [
+          {
+            "id": "preview-metadata-profile",
+            "version": "0.1"
+          }
+        ],
+        "adapter_versions": {
+          "metadata-inspector": "mock-0.1",
+          "compatibility-assessor": "mock-0.1",
+          "report-generator": "mock-0.1"
+        }
+      },
+      "expected": {
+        "stage": "planning",
+        "outcome": "admissible",
+        "code": null
+      }
+    }
+  ]
+}

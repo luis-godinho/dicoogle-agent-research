@@ -1,0 +1,64 @@
+{
+  "assessment_id": "assessment-demo-001",
+  "reference_id": "series-demo-001",
+  "snapshot_id": "metadata-demo-001",
+  "profile_id": "preview-metadata-profile",
+  "profile_version": "0.1",
+  "verdict": "compatible",
+  "scope": "metadata_only",
+  "checks": [
+    {
+      "rule_id": "C1",
+      "instance_uid": "2.25.10003",
+      "status": "satisfied",
+      "reason": "Synthetic observed value satisfies this illustrative profile rule."
+    },
+    {
+      "rule_id": "C2",
+      "instance_uid": "2.25.10003",
+      "status": "satisfied",
+      "reason": "Synthetic observed value satisfies this illustrative profile rule."
+    },
+    {
+      "rule_id": "C3",
+      "instance_uid": "2.25.10003",
+      "status": "satisfied",
+      "reason": "Synthetic observed value satisfies this illustrative profile rule."
+    },
+    {
+      "rule_id": "C4",
+      "instance_uid": "2.25.10003",
+      "status": "satisfied",
+      "reason": "Synthetic observed value satisfies this illustrative profile rule."
+    },
+    {
+      "rule_id": "C1",
+      "instance_uid": "2.25.10004",
+      "status": "satisfied",
+      "reason": "Synthetic observed value satisfies this illustrative profile rule."
+    },
+    {
+      "rule_id": "C2",
+      "instance_uid": "2.25.10004",
+      "status": "satisfied",
+      "reason": "Synthetic observed value satisfies this illustrative profile rule."
+    },
+    {
+      "rule_id": "C3",
+      "instance_uid": "2.25.10004",
+      "status": "satisfied",
+      "reason": "Synthetic observed value satisfies this illustrative profile rule."
+    },
+    {
+      "rule_id": "C4",
+      "instance_uid": "2.25.10004",
+      "status": "satisfied",
+      "reason": "Synthetic observed value satisfies this illustrative profile rule."
+    }
+  ],
+  "limitations": [
+    "Synthetic fixture only.",
+    "No pixel decoding or preview execution.",
+    "No archive completeness or clinical suitability established."
+  ]
+}
