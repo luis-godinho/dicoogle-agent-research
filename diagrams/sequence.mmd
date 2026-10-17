@@ -19,58 +19,63 @@ sequenceDiagram
         O->>DB: Record reason
         O-->>U: Refuse or explain no match
     else Target available
-        opt Selection is ambiguous
-            C-->>O: Multiple candidate series
-            loop Until selection resolved or request cancelled
+        loop Until selection resolved or request cancelled
+            C-->>O: Selection status
+            opt Ambiguous selection
                 O-->>U: Ask for series or criterion
                 U->>O: Clarification or cancellation
                 O->>C: Update selection
-                C-->>O: Updated selection status
             end
         end
-        O->>P: Goal, permitted context and contracts
-        P-->>O: Candidate plan
-        O->>DB: Record candidate and versions
-        O->>V: Validate and register future obligations
-        V-->>O: Outcome and explanations
-        O->>DB: Record validation
-        alt Invalid or current condition unknown
-            O-->>U: Explain rejection or missing information
-        else Admissible plan
-            O->>A: Check server-side policy and approvals
-            opt Explicit approval required
-                A-->>U: Show exact plan and effects
-                U->>A: Approve or refuse
-            end
-            A-->>O: Authorization outcome
-            alt Not authorized
-                O->>DB: Record execution block
-                O-->>U: Explain block
-            else Authorized
-                O->>E: Execute exact plan
-                E->>C: Refresh conditions and freeze manifest
-                C-->>E: Current context and manifest
-                E->>V: Revalidate current conditions
-                V-->>E: Outcome
-                alt Revalidation fails
-                    E->>DB: Record block
-                    E-->>U: Explain changed conditions
-                else Revalidation succeeds
-                    loop Each step until completion or failure
-                        E->>V: Check inputs and runtime preconditions
-                        V-->>E: Step decision
-                        alt Step blocked
-                            E->>DB: Record reason; stop dependent work
-                        else Step allowed
-                            E->>T: Invoke approved operation
-                            T-->>E: Output or error
-                            E->>V: Validate returned output if present
-                            V-->>E: Output decision
-                            E->>DB: Record attempt and outcome
+        alt Selection cancelled
+            O->>DB: Record cancellation
+        else Selection resolved
+            C-->>O: Concrete series reference
+            O->>P: Goal, permitted context and contracts
+            P-->>O: Candidate plan
+            O->>DB: Record candidate and versions
+            O->>V: Validate plan and register future obligations
+            V-->>O: Outcome and explanations
+            O->>DB: Record validation
+            alt Invalid or essential current condition unknown
+                O-->>U: Explain rejection or missing information
+            else Admissible plan
+                O->>A: Check trusted policy and required approvals
+                opt Explicit approval required
+                    A-->>U: Show exact plan and effects
+                    U->>A: Approve or refuse
+                end
+                A-->>O: Authorization outcome
+                alt Not authorized
+                    O->>DB: Record execution block
+                    O-->>U: Explain block
+                else Authorized
+                    O->>E: Execute exact plan
+                    E->>C: Refresh conditions and freeze instance manifest
+                    C-->>E: Current context and manifest
+                    E->>V: Revalidate current conditions
+                    V-->>E: Outcome
+                    alt Revalidation fails
+                        E->>DB: Record block
+                        E-->>U: Explain changed conditions
+                    else Revalidation succeeds
+                        loop Each step until completion or failure
+                            E->>V: Check inputs and runtime preconditions
+                            V-->>E: Step decision
+                            alt Step blocked
+                                E->>DB: Record reason and stop scheduling
+                            else Step allowed
+                                E->>T: Invoke approved operation
+                                T-->>E: Output or error
+                                E->>V: Validate returned output if present
+                                V-->>E: Output decision
+                                E->>DB: Record attempt and outcome
+                            end
                         end
+                        E-->>U: Report or operational failure
                     end
-                    E-->>U: Report or operational failure
                 end
             end
         end
     end
+

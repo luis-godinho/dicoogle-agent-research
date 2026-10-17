@@ -9,37 +9,4 @@ tags: [architecture, mermaid]
 
 Components describe logical responsibilities; they do not require separate microservices.
 
-```mermaid
-flowchart TB
-    U["Researcher"] --> UI
-    subgraph AGENT["Dicoogle Agent - Logical Components"]
-        UI["Interface / API"] --> O["Request Coordinator"]
-        O --> C["Context Service"]
-        C --> AD["Dicoogle Adapter"]
-        O --> P["Planner - manual first"]
-        K["Versioned Tool Catalog"] --> P
-        P -->|"Candidate plan"| O
-        O --> V["Deterministic Validator"]
-        K --> V
-        C -->|"Current context"| V
-        POL["Server-side Policies"] --> V
-        V -->|"Outcome and obligations"| O
-        O --> AC["Approval Control"]
-        POL --> AC
-        AC -->|"Authorization decision"| O
-        O --> E["Controlled Executor"]
-        E -->|"Before-step checks"| V
-        E --> AD
-        E --> T["Tool Adapters"]
-        T --> R["Report Generator"]
-        R --> UI
-        O -.-> DB[("Persistent Ledger")]
-        V -.-> DB
-        AC -.-> DB
-        E -.-> DB
-        R -.-> DB
-    end
-    AD --> D["Dicoogle"]
-    P --> L["LLM Service - later phase"]
-    L --> P
-```
+[Diagram](../diagrams/components.mmd)

@@ -1,32 +1,94 @@
 flowchart TB
-    U["Researcher"] --> UI
-    subgraph AGENT["Dicoogle Agent - Logical Components"]
-        UI["Interface / API"] --> O["Request Coordinator"]
-        O --> C["Context Service"]
-        C --> AD["Dicoogle Adapter"]
-        O --> P["Planner - manual first"]
-        K["Versioned Tool Catalog"] --> P
-        P -->|"Candidate plan"| O
-        O --> V["Deterministic Validator"]
-        K --> V
-        C -->|"Current context"| V
-        POL["Server-side Policies"] --> V
-        V -->|"Outcome and obligations"| O
-        O --> AC["Approval Control"]
-        POL --> AC
-        AC -->|"Authorization decision"| O
-        O --> E["Controlled Executor"]
-        E -->|"Before-step checks"| V
-        E --> AD
-        E --> T["Tool Adapters"]
-        T --> R["Report Generator"]
-        R --> UI
-        O -.-> DB[("Persistent Ledger")]
-        V -.-> DB
-        AC -.-> DB
-        E -.-> DB
-        R -.-> DB
+    U["Researcher"]
+
+    subgraph AGENT["Dicoogle Agent — Logical Components"]
+        direction TB
+
+        UI["1. Interface / API<br/>Receives requests, clarifications,<br/>approvals and returns results"]
+
+        O["2. Request Coordinator<br/>Controls request state and routes work"]
+
+        C["3. Context Service<br/>Resolves targets and assembles<br/>permitted context"]
+
+        AD["4. Dicoogle Adapter<br/>Maps agent operations to<br/>verified Dicoogle interfaces"]
+
+        K["5. Versioned Tool Catalog<br/>Approved tool contracts,<br/>profiles and versions"]
+
+        P["6. Planner<br/>Produces candidate plan<br/>Manual first; LLM later"]
+
+        V["7. Deterministic Validator<br/>Checks structure, types, parameters,<br/>preconditions and policy"]
+
+        POL["8. Server-side Policies<br/>Access, effects and<br/>approval requirements"]
+
+        AC["9. Approval Control<br/>Checks trusted approvals<br/>when policy requires them"]
+
+        E["10. Controlled Executor<br/>Runs authorized plan nodes<br/>and handles failures"]
+
+        T["11. Tool Adapters<br/>Metadata inspection,<br/>assessment and report generation"]
+
+        R["12. Report Generator<br/>Produces compatibility report<br/>and result explanation"]
+
+        DB[("13. Persistent Ledger<br/>Stores plans, decisions,<br/>attempts and outputs")]
     end
-    AD --> D["Dicoogle"]
-    P --> L["LLM Service - later phase"]
-    L --> P
+
+    D["Dicoogle<br/>Archive, search and metadata"]
+    L["LLM Service<br/>Later phase"]
+
+    U -->|"R1: Submit goal,<br/>study and clarification"| UI
+    UI -->|"R2: Authenticated request"| O
+
+    O -->|"R3: Resolve study/series"| C
+    C -->|"R4: Query archive"| AD
+    AD -->|"R5: References and metadata"| C
+    C -->|"R6: Resolved context<br/>or ambiguity"| O
+
+    O -->|"R7: Goal + permitted context"| P
+    K -->|"R8: Approved contracts"| P
+    P -->|"R9: Request plan"| L
+    L -->|"R10: Candidate plan"| P
+    P -->|"R11: Candidate plan"| O
+
+    O -->|"R12: Validate plan"| V
+    K -->|"R13: Types and preconditions"| V
+    C -->|"R14: Current context"| V
+    POL -->|"R15: Rules and effects"| V
+    V -->|"R16: Valid/invalid + reasons"| O
+
+    O -->|"R17: Check approval"| AC
+    POL -->|"R18: Approval policy"| AC
+    AC -->|"R19: Authorized/blocked"| O
+
+    O -->|"R20: Execute authorized plan"| E
+    E -->|"R21: Refresh context"| C
+    C -->|"R22: Current state"| E
+    E -->|"R23: Revalidate before step"| V
+    V -->|"R24: Step allowed/blocked"| E
+
+    E -->|"R25: Archive operations"| AD
+    AD -->|"R26: Authorized API calls"| D
+    D -->|"R27: Results or errors"| AD
+
+    E -->|"R28: Approved tool operation"| T
+    T -->|"R29: Tool output"| E
+    E -->|"R30: Validate output"| V
+    V -->|"R31: Output accepted/rejected"| E
+
+    T -->|"R32: Assessment result"| R
+    R -->|"R33: Compatibility report"| UI
+    UI -->|"R34: Report and status"| U
+
+    O -.->|"L1: Goal and plan"| DB
+    V -.->|"L2: Validation decisions"| DB
+    AC -.->|"L3: Approval decisions"| DB
+    E -.->|"L4: Attempts and outputs"| DB
+    R -.->|"L5: Report reference"| DB
+
+    classDef external fill:#EEEEEE,stroke:#777777,color:#222;
+    classDef control fill:#DDEEFF,stroke:#2266AA,color:#222;
+    classDef validation fill:#DDF2DD,stroke:#448844,color:#222;
+    classDef data fill:#FFF3CD,stroke:#B8860B,color:#222;
+
+    class U,D,L external;
+    class UI,O,C,AD,P,AC,E,T,R control;
+    class V,POL validation;
+    class K,DB data;
