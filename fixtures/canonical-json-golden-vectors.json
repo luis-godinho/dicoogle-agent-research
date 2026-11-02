@@ -1,0 +1,141 @@
+{
+  "status": "expected canonical JSON vectors; not executed",
+  "convention": "Dicoogle Agent prototype canonical JSON digest v1",
+  "scope": "Current prototype only: catalogue and plan JSON object roots; signed 64-bit integers only; no floating point or general RFC 8785/JCS claim.",
+  "algorithm": "SHA-256 over canonical UTF-8 bytes, UTF-8 without BOM, no trailing newline",
+  "input_representation": "input_json is exact JSON text; input_utf8_hex is exact bytes. Accepted canonical_utf8_hex is the exact bytes hashed.",
+  "accepted": [
+    {
+      "id": "G01-empty-object",
+      "input_json": "{}",
+      "canonical_json": "{}",
+      "canonical_utf8_hex": "7b7d",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "id": "G02-key-order",
+      "input_json": "{\"b\":1,\"a\":2}",
+      "canonical_json": "{\"a\":2,\"b\":1}",
+      "canonical_utf8_hex": "7b2261223a322c2262223a317d",
+      "sha256": "d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772"
+    },
+    {
+      "id": "G03-nested",
+      "input_json": "{\"z\":[true,false,null],\"a\":{\"b\":\"x\"}}",
+      "canonical_json": "{\"a\":{\"b\":\"x\"},\"z\":[true,false,null]}",
+      "canonical_utf8_hex": "7b2261223a7b2262223a2278227d2c227a223a5b747275652c66616c73652c6e756c6c5d7d",
+      "sha256": "d622e799ac842f8491d3aa1fe503423b68b13a20067e8f73620eb5179858dac3"
+    },
+    {
+      "id": "G04-utf8-raw",
+      "input_json": "{\"s\":\"é\",\"a\":\"x\"}",
+      "canonical_json": "{\"a\":\"x\",\"s\":\"é\"}",
+      "canonical_utf8_hex": "7b2261223a2278222c2273223a22c3a9227d",
+      "sha256": "5aa183502ed128a967b0728dad4e1358531a23dc86632b3a0733b30cec9e5d3d"
+    },
+    {
+      "id": "G05-code-point-key-order",
+      "input_json": "{\"\\ue000\":1,\"\\ud800\\udc00\":2}",
+      "canonical_json": "{\"\":1,\"𐀀\":2}",
+      "canonical_utf8_hex": "7b22ee8080223a312c22f0908080223a327d",
+      "sha256": "8706b5798a29d65739b3d1bbb1d009f87d005c71c8130c5353c4990c15ddfec8"
+    },
+    {
+      "id": "G06-string-escapes",
+      "input_json": "{\"s\":\"a\\\"b\\\\c\\nd\\t\"}",
+      "canonical_json": "{\"s\":\"a\\\"b\\\\c\\nd\\t\"}",
+      "canonical_utf8_hex": "7b2273223a22615c22625c5c635c6e645c74227d",
+      "sha256": "b7fa093b2988226c1e17d503172ba9df55b89447497cd39cf39bfc704f516e8b"
+    },
+    {
+      "id": "G07-int64-bounds",
+      "input_json": "{\"min\":-9223372036854775808,\"max\":9223372036854775807,\"zero\":0}",
+      "canonical_json": "{\"max\":9223372036854775807,\"min\":-9223372036854775808,\"zero\":0}",
+      "canonical_utf8_hex": "7b226d6178223a393232333337323033363835343737353830372c226d696e223a2d393232333337323033363835343737353830382c227a65726f223a307d",
+      "sha256": "f0312149245bc3a9766e8fe6e878016c359b5b8ea0bb65cf054f49ed68900f99"
+    },
+    {
+      "id": "G08a-no-normalization-nfc",
+      "input_json": "{\"s\":\"é\"}",
+      "canonical_json": "{\"s\":\"é\"}",
+      "canonical_utf8_hex": "7b2273223a22c3a9227d",
+      "sha256": "86028b41ba792eaf82aa26a45b218f6734f7f1096a86f1746c8296e088a0ccb4"
+    },
+    {
+      "id": "G08b-no-normalization-nfd",
+      "input_json": "{\"s\":\"e\\u0301\"}",
+      "canonical_json": "{\"s\":\"é\"}",
+      "canonical_utf8_hex": "7b2273223a2265cc81227d",
+      "sha256": "1fc0bd7cc93fca8092a2041d7d01842876422aa7e2838acf42c14578e9f2be05"
+    },
+    {
+      "id": "G09-whitespace",
+      "input_json": " { \"b\" : 1, \"a\" : 2 }\n",
+      "canonical_json": "{\"a\":2,\"b\":1}",
+      "canonical_utf8_hex": "7b2261223a322c2262223a317d",
+      "sha256": "d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772"
+    }
+  ],
+  "rejected": [
+    {
+      "id": "R01-duplicate-key",
+      "input_json": "{\"a\":1,\"a\":2}",
+      "error_category": "duplicate_key"
+    },
+    {
+      "id": "R02-negative-zero",
+      "input_json": "{\"a\":-0}",
+      "error_category": "negative_zero"
+    },
+    {
+      "id": "R03-exponent-notation",
+      "input_json": "{\"a\":1e3}",
+      "error_category": "non_integer_number"
+    },
+    {
+      "id": "R04-malformed-escape",
+      "input_json": "{\"s\":\"\\q\"}",
+      "error_category": "invalid_json"
+    },
+    {
+      "id": "R05-unpaired-surrogate",
+      "input_json": "{\"s\":\"\\ud800\"}",
+      "error_category": "unpaired_surrogate"
+    },
+    {
+      "id": "R06-bom",
+      "input_utf8_hex": "efbbbf7b7d",
+      "error_category": "bom"
+    },
+    {
+      "id": "R07-invalid-utf8",
+      "input_utf8_hex": "7b2273223a22ff227d",
+      "error_category": "invalid_utf8"
+    },
+    {
+      "id": "R08-root-array",
+      "input_json": "[1,2]",
+      "error_category": "non_object_root"
+    },
+    {
+      "id": "R09-int64-overflow",
+      "input_json": "{\"a\":9223372036854775808}",
+      "error_category": "integer_out_of_range"
+    },
+    {
+      "id": "R10-non-string-key",
+      "input_json": "{1:2}",
+      "error_category": "invalid_json"
+    },
+    {
+      "id": "R11-nan",
+      "input_json": "{\"a\":NaN}",
+      "error_category": "non_finite_number"
+    },
+    {
+      "id": "R12-trailing-comma",
+      "input_json": "{\"a\":1,}",
+      "error_category": "invalid_json"
+    }
+  ]
+}

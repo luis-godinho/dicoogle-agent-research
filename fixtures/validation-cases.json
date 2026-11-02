@@ -125,7 +125,6 @@
           },
           "additional_properties": false
         },
-        "additional_properties": false,
         "preconditions": [
           {
             "id": "assessment_available",
@@ -193,7 +192,7 @@
         "catalog": {
           "id": "reference-catalog",
           "version": "0.1",
-          "digest": "f0e50b0af99f9b1b02887c417dd71b714a8fe71b584d55ee3f77b6040a6964c7"
+          "digest": "96e1039feeffe2f5284f9f2db3e08c2efdc9b48d5ed358b670d87ee964121b51"
         },
         "context_inputs": {
           "selected_series": {

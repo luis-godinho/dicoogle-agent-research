@@ -5,8 +5,8 @@
   "user_id": "researcher-demo",
   "plan_id": "plan-demo-001",
   "plan_revision": 1,
-  "plan_digest": "122a7f2930471ffbdb2bb21239be8bf5238cc30e96075e4983c650c3bd7eb602",
-  "catalog_digest": "f0e50b0af99f9b1b02887c417dd71b714a8fe71b584d55ee3f77b6040a6964c7",
+  "plan_digest": "ff9cdac205647750b160830ac7c1c47a5a099b8ecc80e84846c530cf59504851",
+  "catalog_digest": "96e1039feeffe2f5284f9f2db3e08c2efdc9b48d5ed358b670d87ee964121b51",
   "context_id": "context-demo-001",
   "context_revision": 1,
   "policy_id": "test-readonly-policy",
@@ -31,7 +31,7 @@
     "catalog": {
       "id": "reference-catalog",
       "version": "0.1",
-      "digest": "f0e50b0af99f9b1b02887c417dd71b714a8fe71b584d55ee3f77b6040a6964c7"
+      "digest": "96e1039feeffe2f5284f9f2db3e08c2efdc9b48d5ed358b670d87ee964121b51"
     },
     "context_inputs": {
       "selected_series": {

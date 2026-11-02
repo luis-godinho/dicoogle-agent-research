@@ -20,13 +20,13 @@ Example: [`examples/dicom-reference.json`](../examples/dicom-reference.json).
 Required: `schema_version`, `id`, `version`, named input/output ports, parameter constraints, preconditions, effects, approval policy, trusted `executor_key`, limits and failure codes.
 
 - Port types are nominal strings. v0.1 compatibility requires exact equality; no implicit coercion.
-- Parameters have required names, constraints and `additional_properties=false`.
-- Each precondition has a registered deterministic handler and phase: `planning`, `before_step`, or both. Never evaluate contract text as code.
+- Parameters have required names and constraints. `additional_properties=false` is valid only inside the `parameters` descriptor; a tool-level `additional_properties` field is invalid and must be rejected. It is not JSON Schema `additionalProperties`.
+- Each precondition has a registered deterministic handler and `phase` equal to `planning`, `before_step`, or `planning_and_before_step`. The combined value means the condition is checked during both planning and before the step; do not represent it as an array or boolean. Never evaluate contract text as code.
 - Effects are declarative labels; they do not grant permission.
 - `executor_key` maps to a server-approved adapter, never an LLM-supplied command.
 - Initial limits: positive timeout; one attempt; no automatic retry.
 
-The JSON snippets are domain descriptors, not complete published JSON Schemas. See [`examples/tool-catalog.json`](../examples/tool-catalog.json).
+The JSON snippets are domain descriptors, not complete published JSON Schemas. The authoritative catalogue is [`examples/tool-catalog.json`](../examples/tool-catalog.json). The embedded catalogue in [`fixtures/validation-cases.json`](../fixtures/validation-cases.json) is a derived validation copy and must deep-equal it; it is not a second authority.
 
 ## 3. Plan
 Required: `schema_version`, `plan_id`, positive `revision`, goal, catalog ID/version/digest, context inputs, nodes and edges.
@@ -45,10 +45,20 @@ Example: [`examples/run-record.json`](../examples/run-record.json) is a hypothet
 ## Auxiliary values
 `SeriesMetadataSnapshot` records the exact observed manifest, time/scope and per-instance properties. A property has `known` plus a value or `unknown` plus a reason. Do not infer archive completeness from `InstanceNumber`. A retrieval failure for a whole manifest instance fails this initial operation; an unavailable individual property can yield `unknown` and an `indeterminate` assessment.
 
-`CompatibilityAssessment` records reference/snapshot/profile versions, per-rule/per-instance outcomes and limitations. `ReportArtifactRef` uses a server-managed storage key, not a destination URL supplied by a plan.
+`CompatibilityAssessment` records reference/snapshot/profile versions, per-rule/per-instance outcomes and limitations. `ReportArtifactRef` uses a server-managed storage key, not a destination URL supplied by a plan. Its `content_digest` is an artifact-content digest, not a catalogue/plan canonical digest; it is unverifiable until the artifact bytes are supplied under an approved artifact-digest rule.
 
-## Plan digest
-The fixture convention is SHA-256 over UTF-8 JSON with sorted keys, compact separators, `ensure_ascii=false`, and no NaN/Infinity. This is a local proposal, not RFC 8785 canonical JSON. Restrict fixture values and select a cross-language canonicalization before Java/production use. Approval should bind the exact digest, user, references, effects, destination, expiry and current policy; approval must be stored in a trusted server-side source, not asserted by the plan.
+## Canonical JSON digest
+Named convention: **Dicoogle Agent prototype canonical JSON digest v1**. It is a local fixture convention, not RFC 8785/JCS, and it is not a general-purpose canonicalization standard. The current prototype is integer-only and applies this convention to the catalogue and plan digest fields.
+
+- Subject: a JSON object. The catalogue digest covers the entire catalogue object; a plan digest covers the entire plan object, including its catalogue reference. A non-object root is rejected for these fields.
+- Encoding: UTF-8 without BOM; SHA-256 over the canonical bytes; no trailing newline.
+- Whitespace: insignificant parser whitespace is discarded; the canonical writer emits compact separators `,` and `:` and no whitespace. Array order is preserved.
+- Keys: JSON strings, sorted by Unicode code-point sequence. Java must use an explicit code-point comparator, not `String.compareTo`. Duplicate keys and non-string keys are rejected. No Unicode normalization is performed.
+- Strings: valid Unicode scalar values; unpaired surrogates are rejected. Emit raw UTF-8 for non-ASCII characters and escape only `"`, `\`, and control characters using standard JSON escapes. Do not escape `/`, U+2028 or U+2029.
+- Numbers: **integer-only in the current prototype**; signed 64-bit integers in decimal form. Reject fractions, exponent notation, leading `+`, leading zeros, `-0`, and values outside the signed 64-bit range. Reject NaN and Infinity.
+- Literals/containers: `true`, `false`, `null`, objects and arrays are supported. Reject BOM, invalid UTF-8, malformed JSON/escapes and any value outside this subset.
+
+Approval should bind the exact digest, user, references, effects, destination, expiry and current policy; approval must be stored in a trusted server-side source, not asserted by the plan.
 
 ## Formal model
 Let `t=(id, version, I, O, Θ, Pre, Eff)` describe a tool, and `P=(V,E,B)` a plan. Let `K` be the catalog, `Π` the policy, `C` the context and `u` the user.
