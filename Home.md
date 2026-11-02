@@ -19,7 +19,7 @@ Draft research documentation for a proposed verifiable DICOM-native pipeline age
 [[System Context]] · [[Components]] · [[Sequence]] · [[Architecture Decisions]] · [[Dicoogle Integration]]
 
 ## Research
-[[Reading List]] · [[Related Work Matrix]] · [[Dataset and Ground Truth]] · [[Evaluation Protocol]] · [[Reproducibility]]
+[[Reading List]] · [[Related Work Matrix]] · [[Dataset and Ground Truth]] · [[Evaluation Protocol]] · [[Reproducibility]] · [[Annotation Ablation Protocol]]
 
 ## Specification and security
 [[JSON Schemas]] · [[Approval and Governance]] · [[Threat Model]] · [[Privacy and Retention]]
