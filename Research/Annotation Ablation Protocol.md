@@ -3,92 +3,97 @@ status: draft
 tags: [dicoogle-agent, experiment, protocol]
 ---
 
-[[Home]] · [[Scope and Research Question]] · [[Reference Use Case]] · [[Contracts v0.1]]
+[[Home]] · [[Scope and Research Question]] · [[Reference Use Case]] · [[Contracts v0.1]] · [[Experimental Pipeline]] · [[Experimental Pipeline Decisions]]
 
-# Annotation Ablation Protocol — v0.1
+# Annotation Ablation Protocol — v0.2
 
-**Status:** draft proposal for supervisor review. No dataset has been selected, no experiment has been run and no LLM has been queried. Nothing in this page is a result.
+Status: proposal for supervisor review, updated 2026-11-09. Dataset exploration and initial software foundations have been reported; no completed model experiment is reported. The clinical task, dataset, models and confirmatory analysis are not yet approved.
 
 ## 1. Purpose and research questions
-Supervisor direction: start with general-purpose LLMs for a triage step, plan around its output, and prepare a pipeline that obtains annotated public datasets and removes annotations to measure the difference in results.
 
-- **RQ-A (primary):** On annotated public radiology datasets, how does the triage performance of general-purpose LLMs change when DICOM annotation objects and/or text are removed from the input?
-- **RQ-B (secondary, later):** How can an uncertain, untrusted triage output be used by the planner without bypassing deterministic validation? Out of scope for the first experiment.
+Start with general-purpose multimodal LLMs for medical-imaging triage and investigate how available annotations affect their outputs. Later, study how an uncertain, untrusted triage output can inform planning without bypassing deterministic validation.
 
-Motivation, not a result of this project: a published study of GPT-4V on brain MRI cases (Radiology, 2025) reported that textual description of findings was the dominant factor in diagnostic accuracy, while image annotations did not help. Verify details before citing; record in [[Reading List]] when that page exists.
+- RQ-A: how does task performance change when selected annotation information is shown or withheld, on the same cases?
+- RQ-B, later: how can triage output inform a technically admissible tool plan?
 
-## 2. Scope
-In scope: radiology; general-purpose multimodal LLMs; public de-identified datasets; one triage task at a time.
-Out of scope: specialized medical models (later stage); non-public data; clinical claims; fine-tuning; planner integration; pixel-level AI pipelines.
+These are distinct questions. Classification performance does not establish plan validity or clinical usefulness.
+
+## 2. Scope and acquisition boundary
+
+Initial scope: one triage task at a time, general-purpose multimodal models and public de-identified radiology data subject to permission checks. No fine-tuning or clinical deployment claims. Non-public data and live Dicoogle integration require a separate reviewed scope.
+
+Data acquisition is external. The user independently downloads and organises images, annotations and tables. The experimental harness begins from that local folder, never downloads missing dependencies, and does not require IDC/TCIA at runtime. See [[Experimental Pipeline]].
 
 ## 3. Annotation taxonomy
-| Class | Examples | Status in v0.1 |
+
+| Class | Examples | Treatment |
 |---|---|---|
-| A. DICOM annotation objects | Segmentation (SEG), Structured Report (SR), RT Structure Set; other annotation-bearing objects found during inventory | Required: must be removed and varied |
-| B. Text | Radiology reports, clinical history or indication, free text in DICOM header fields, meaningful text in file or series names | Required: must be removed and varied |
-| C. Marks in pixel data | Arrows, boxes, burned-in text | Exploratory; at minimum audited as leakage |
+| A. Annotation objects | SEG, SR, RTSTRUCT | Inventory locally; interpret each object's content and permitted presentation |
+| B. Text | Reports, history, header text, meaningful file names | Include only if justified and not an unintended disclosure of the reference target |
+| C. Pixel marks | Arrows, boxes, burned-in text | Audit; an additional experimental condition requires explicit design |
 
-## 4. Conditions
-Paired design: every case is evaluated under every condition.
+An object is not automatically safe because it is called an annotation. SR or report content may disclose diagnosis or reader malignancy ratings. Its use may change the task from image inference to interpretation of supplied findings.
 
-| ID | Image data | Class A | Class B |
-|---|---|---|---|
-| C0 | yes | no | no |
-| C1 | yes | yes | no |
-| C2 | yes | no | yes |
-| C3 | yes | yes | yes |
+## 4. Conditions and localisation
 
-C0 vs C1 isolates DICOM annotation objects; C0 vs C2 isolates text; C3 vs C1/C2 tests interaction. How class A is presented to a model (rendered overlay, mask image, serialized values) and how image data are presented (slices, montage, windowing) are open decisions; each must be fixed and documented before running.
+Initial engineering target: image without displayed mask versus image with segmentation overlay. Use identical cases.
+
+The localisation policy remains a decision for approval:
+- Same mask-selected slices in both arms: estimates the benefit of displaying the mask, conditional on annotation-informed localisation. The image-only arm is not annotation-independent.
+- Annotation-independent selection versus mask-guided selection plus overlay: estimates the combined localisation and display effect.
+
+The earlier four-condition image/object/text factorial design remains a possible extension, not a mandatory initial experiment. Text conditions are added only after defining their information content and leakage implications. Image rendering, windowing, slice count, mask interpretation and prompt must be fixed before the real run.
 
 ## 5. Task and reference standard
-The triage task is chosen before data are downloaded; the pilot uses one task. Candidates, to decide with the supervisor: normal vs abnormal; finding present or absent; finding category or body region; series relevance; urgency level.
 
-Reference labels come from the dataset's own annotations or curated metadata, are fixed before any model is run, and are stored apart from model inputs. Labels may derive from the same annotations that are removed, so the label source must be documented per dataset and the task framed as inference from the remaining input. Model output uses a fixed JSON schema; parse failures are counted as invalid and never silently repaired.
+The exact triage target remains open: malignancy classification is one explored candidate, not an approved universal definition of triage. Select a dataset whose labels support the chosen question.
 
-## 6. Pipeline stages
-1. Inventory candidate collections. Record per dataset: license and terms, access route, modality, annotation classes, text availability, de-identification statement, size.
-2. Select one collection for the pilot (about 20–30 cases).
-3. Acquire from the source; record versions, dates and hashes.
-4. Validate DICOM metadata; define series-selection rules in advance.
-5. Build variants C0–C3 from the same source case with deterministic scripted transformations; no manual edits.
-6. Leakage audit (section 7).
-7. Package with a per-case manifest: source identifiers, transformations applied, hashes; reference labels kept separate.
-8. LLM execution, gated by section 9.
-9. Analysis.
+Reference labels are derived deterministically from declared sources and kept separate from model inputs. Record diagnosis method, label granularity, coverage, conflicts and limitations. Absence of annotation is not a negative finding. A patient diagnosis must not be silently assigned to every nodule.
+
+LIDC-IDRI is an optional integration example, not the committed final dataset. The reported usable annotated subset is provisional and requires local uniqueness and eligibility checks; see [[Experimental Pipeline Decisions]].
+
+## 6. Local experimental stages
+
+1. Index existing local DICOM files and annotation references.
+2. Review the dataset definition; construct the eligible cohort and exclusion audit.
+3. Prepare deterministic condition-specific inputs, excluding ground truth.
+4. Audit leakage and visually inspect representative inputs.
+5. Execute the configured models through isolated connectors; preserve raw exchanges and failures.
+6. Evaluate on matched cases, report coverage, uncertainty, limitations and reproducibility information.
+
+Synthetic fixtures and mock inference precede real-data integration and a small approved real-model pilot. Pilot size is a feasibility choice, not evidence of statistical power.
 
 ## 7. Leakage controls
-Stripped variants must not reveal removed information through: DICOM header fields (series or study description, protocol name, image comments, referenced series or object UIDs), file or directory names, manifest or prompt text, UIDs or identifiers that encode meaning, burned-in text or marks. Use an allowlist of what the model sees, not a blocklist. Audit programmatically and with a manual sample, and report the method and findings. Do not assume UIDs or hashes are anonymous.
 
-## 8. Model runs and analysis (proposed)
-- At least one general-purpose multimodal LLM. Record provider, model name and version, access date, parameters and prompt-template version.
-- Prompts and schema are versioned and frozen before running; no tuning on evaluation cases.
-- Repeat each case and condition N times (pilot default N=3, to be justified) to measure run-to-run variability.
-- Compare conditions pairwise on the same cases. Report the task metric (for example accuracy, sensitivity, specificity as appropriate), invalid-output rate, consistency across repeats, cost and latency.
-- Choose the statistical method before collecting data (for example paired tests or bootstrap intervals). Report null and negative results.
+Use allowlists for model-visible text. Check headers, file names, prompts, manifests, annotation semantics, identifiers and burned-in content. Do not assume UIDs or hashes anonymise information.
 
-## 9. Data governance and gate before the first external LLM call
-Only public, de-identified datasets; confirm each dataset's terms; no non-public data. All items must be recorded as satisfied before any request to an external provider:
-- [ ] Dataset terms allow sending the data to the chosen provider.
-- [ ] Provider terms on retention and training use reviewed.
-- [ ] De-identification and burned-in text audit done on the exact files sent.
-- [ ] Leakage audit completed for C0–C3.
-- [ ] Prompt, schema, model version and analysis plan frozen.
+Class names in a response schema are legitimate task instructions; exposing the true label of the individual case is not. Automated tests use distinctive forbidden-content sentinels and structural separation from label tables, complemented by manual inspection of real inputs.
+
+## 8. Model runs and analysis proposal
+
+Record model/provider version, parameters, repetitions/seeds, exact input and prompt identities, output schema, failures, latency and available usage/cost data. Do not tune prompts on evaluation outcomes.
+
+For an initial binary task, balanced accuracy is the proposed primary metric, with secondary accuracy, positive-class sensitivity/specificity and AUROC where meaningful. The positive class is explicit. Report matched-condition effect estimates with intervals and class/coverage counts. Success-only metrics are labelled conditional on successful inference.
+
+Exact McNemar on paired correctness is a candidate hypothesis test, not a test of balanced accuracy or AUROC. Any confirmatory family and its seed policy require prior approval; otherwise results remain exploratory. No universal minimum-effect threshold is imposed. Multiple datasets are initially reported separately.
+
+Binary predictions may be analysed by true diagnostic subtype, but must not be presented as three-class predictions. Failed cases receive no invented probability scores. Null, negative and inconclusive findings are retained.
+
+## 9. Gate before external LLM calls
+
+- [ ] Dataset and task selected, with eligible cases and reference-standard limitations reviewed.
+- [ ] Dataset terms permit the intended transfer and use.
+- [ ] Provider retention/training terms reviewed.
+- [ ] De-identification and burned-in content audit completed for the actual inputs.
+- [ ] Leakage and input-localisation policies reviewed.
+- [ ] Prompt, output schema, model configuration and analysis decisions frozen.
+- [ ] Budget and expected call count approved.
 - [ ] Supervisor approval recorded.
 
-This is a technical checklist, not a legal conclusion about GDPR or the EU AI Act; institutional review remains open.
+Public availability alone does not authorise arbitrary external transfer. This checklist is not a legal conclusion; institutional requirements remain applicable.
 
-## 10. Relation to the agent
-Triage output is an untrusted proposal. If used later, it informs the planner's input while the deterministic validator in [[Contracts v0.1]] still decides admissibility. The experiment harness stays separate from the Dicoogle plugin; a tool enters the catalogue only after a result justifies it. Details may move to [[Dataset and Ground Truth]] and [[Evaluation Protocol]] when those pages are written.
+## 10. Relation to the agent and validity limits
 
-## 11. Threats to validity
-Training-data contamination of public datasets; case selection bias; prompt sensitivity; model version drift; label circularity; small pilot sample; limited generalization beyond the chosen modality and task.
+Triage output is untrusted. Later planning must still pass deterministic contracts and validation in [[Contracts v0.1]]. The experiment harness does not establish a production integration.
 
-## 12. Open decisions
-1. Triage task for the pilot.
-2. Collection for the pilot.
-3. How class A objects are presented to the model.
-4. Whether SR content converted to text counts as class A or class B.
-5. Image presentation (slices, montage, windowing).
-6. Model(s) and provider(s).
-7. Sample size and statistical method.
-8. Whether class C goes beyond a leakage audit.
+Threats include training-data contamination, dataset/annotation selection bias, label circularity, patient-versus-lesion mismatch, selective failures, rendering choices, prompt sensitivity, provider drift, small samples and limited generalisation. Current engineering progress is recorded in [[Experimental Pipeline]], separately from experimental evidence.
