@@ -7,7 +7,7 @@ tags: [dicoogle-agent, experiment, decisions]
 
 # Experimental Pipeline Decisions
 
-Decision snapshot: 2026-11-09. Accepted engineering decisions are distinguished from research proposals awaiting approval. This is a record of reasoning, not experimental results.
+Decision snapshot: 2026-11-18. Accepted engineering decisions are distinguished from research proposals awaiting approval. This is a record of reasoning, not experimental results. Implementation checkpoints below are based on development verification reports, not an independent audit of the implementation repository.
 
 ## D1 — Keep acquisition outside the harness
 
@@ -105,6 +105,62 @@ Decision snapshot: 2026-11-09. Accepted engineering decisions are distinguished 
 
 **Limit:** passing fixtures establishes tested logic, not universal DICOM conformance, support for every transfer syntax or clinical validity. Real-data visual and reference checks remain necessary.
 
+## D13 — Accept the input builder against observable artifacts
+
+**Decision:** require end-to-end synthetic acceptance of rendering, SEG alignment, montage composition, text allowlisting and input records before integrating execution.
+
+**Evidence reported:** Stage 3 acceptance passed with independent pixel comparisons, populated/blank tile arithmetic, sentinel detection, deterministic rebuilds and cache invalidation checks. The acceptance checkpoint was 468 passed, 3 skipped and 2 pre-existing scanner warnings.
+
+**Consequence:** preserve original path order, ordered slice index and DICOM InstanceNumber as distinct concepts. Union applicable SEG masks consistently for both mask-informed selection and overlay display. Reject unsupported geometry rather than guessing alignment. Synthetic success does not approve the study's slice policy or establish real-LIDC compatibility.
+
+## D14 — Cache validity includes code and current dependencies
+
+**Decision:** input reuse requires matching identity, intact generated artifacts and verifiable current manifest, template, response schema, implementation and source dependencies.
+
+**Why:** a committed Git revision alone cannot identify different dirty worktrees, and a generated image hash does not establish that its source is current.
+
+**Consequence:** implementation identity includes a deterministic package-relative source fingerprint. Source size and nanosecond mtime are checked against the current filesystem. Missing required sources produce explicit failures, not stale hits. Edits preserving both size and mtime remain an acknowledged limitation.
+
+## D15 — Explicit connector capabilities, no silent weakening
+
+**Decision:** use one bounded OpenAI-compatible adapter with synthetic transport fixtures. Strict JSON Schema output is the default; unsupported or unverified strict compatibility fails before transport. Non-strict modes require explicit configuration. Local response validation remains mandatory.
+
+**Consequence:** preserve image bytes and the exact prepared prompt. Deliver the requested case identifier in a separate model-visible message and retain the complete outbound body for later persistence. Do not equate internal metadata with content delivered to a model. Configuration controls timeouts, token parameters and per-image raw-byte limits. Provider-specific verification does not imply universal compatible-server support. No live inference was used for adapter verification.
+
+**Mock identity:** SHA-256 over UTF-8 case_id|condition_id|model_id|seed, with decimal seed. The schema enum supplies predictions; the declared positive class supplies the historical always_malignant mode. Oracle mode requires explicit test-only permission.
+
+## D16 — Version run semantics, not individual ledger lines
+
+**Decision:** run.json.schema_version governs interpretation of attempts.jsonl. New runs target version "2"; the attempt ledger has no per-line version.
+
+**Why:** terminality and response acceptance changed, not merely the shape of optional metadata.
+
+**Consequence:** version "1" retains original terminality; "1.1" retains the approved truncation rules without mandatory identity checking; "2" inherits truncation handling and requires case identity validation. Unknown versions are rejected. Existing runs are never silently upgraded, rewritten or retroactively evaluated under newer semantics. Lifecycle writing and full persistence remain T22 work.
+
+## D17 — Separate content validity, identity and truncation
+
+**Decision:** transport errors take precedence. For structurally valid content in version "2", the executor must check the returned case_id against the requested identifier. A mismatch is terminal case_id_mismatch, never reassigned or automatically retried.
+
+**Consequence:** mismatch records exclude parsed content from valid predictions while preserving original response and accounting metadata. Length truncation is assessed separately: invalid JSON, schema-invalid content and identity-matched valid content may each qualify for the single truncation retry. A mismatch never qualifies. A schema-valid final length-truncated response remains ok rather than being falsely labelled a parsing error.
+
+## D18 — Bound retries explicitly and preserve every call
+
+**Decision:** the runner, not the adapter, owns one truncation-retry phase. Double the previous persisted request's output bound exactly, only when a configured output cap and the budget guard permit it. Transport retry allowances are separate per phase.
+
+**Consequence:** preserve every persisted call separately. A content response completes the retry phase; exhausted transport retries also complete it. Resume reconstructs the phase and cannot double again. Pre-call budget controls do not consume transport retries or start a retry phase. Under uninterrupted, fully persisted execution, the call bound is max_retries + 1 without truncation retry, or 2 × (max_retries + 1) with it. Crash windows prevent an absolute remote-call bound.
+
+## D19 — Project the actual request and expose execution uncertainty
+
+**Decision:** keep plan-level assumed-token estimates separate from the per-call budget projection. The latter uses assumed input tokens and the effective request.max_output_tokens, including a doubled retry bound, at configured prices. Reported cost and estimated cost remain distinct. This projection is not a guaranteed billing upper bound.
+
+**Decision:** an unexpected connector exception does not prove that no provider call occurred. Treat the outcome as terminal internal_error without automatic retry, preserve the truncation-phase marker and expose unknown execution/cost rather than fabricating usage or model output.
+
+**Pending verification:** confirm the exact persisted location, version scope and validation of provider_call_attempted, execution_uncertain and cost_unknown. Confirm how reconstructed spend and the budget guard handle unknown cost; unknown must not silently become known zero. These details remain an integration gate before T22, not a closed accounting guarantee.
+
+## Engineering checkpoint — 2026-11-18
+
+The latest development report records 660 passed, 3 opt-in local-data skips and 2 pre-existing scanner fork warnings after T21 corrections. The runner core is library-only. T22 lifecycle, actual request/response persistence and CLI integration have not started in the reported work. This note does not independently certify the implementation or claim real-provider inference, real-data validation or completed end-to-end evaluation.
+
 ## Decisions still open
 
 - Exact triage target and unit of analysis; malignancy classification is an exploratory candidate, not the only interpretation of triage.
@@ -115,6 +171,8 @@ Decision snapshot: 2026-11-09. Accepted engineering decisions are distinguished 
 - Models, providers, repetition count, budget and data-use permission.
 - Primary endpoint and inferential policy, including how seeds enter multiplicity control.
 - Later planning task, reference plans and integration with Dicoogle validation.
+- Approval of the draft triage wording; technical rendering does not constitute research approval.
+- Persisted uncertainty-field representation and unknown-cost budget handling before T22 integration.
 
 ## Completion criterion
 
