@@ -1,100 +1,123 @@
-# Experiência LIDC: relatório de um LLM geral vs SR de referência
+# Experiência LIDC: relatório de um LLM geral vs referências estruturadas
 
-Estado: rascunho de desenho, ainda não implementado. Os resultados da literatura abaixo vêm de excertos de pesquisa, não de leitura integral dos artigos; confirmar nos PDFs antes de citar.
+Estado: desenho provisório revisto em 2026-11-21; não implementado. Decisões condicionadas à auditoria dos dados locais. Prompts para agentes devem ser escritos em inglês.
 
-## 1. Porquê mudar o piloto
+## 1. Objetivo e âmbito
 
-O piloto `exp-lidc_idri_pilot-60994d3b` (2 pacientes, 4 pedidos: 3 sucessos, 1 `connector_error:http_5xx`) testou classificação benigno/maligno com e sem overlay SEG, comparada com labels ao nível do paciente.
+Avaliar se um LLM multimodal geral produz descrições estruturadas de achados a partir de imagens sem anotações visíveis, comparando-as com referências escondidas. O planeador de encaminhamento para modelos especializados fica para uma fase posterior. Esta fase não demonstra utilidade clínica nem eficácia de encaminhamento.
 
-Limitações:
+LIDC-IDRI é o primeiro candidato para validar o método, não um compromisso de dataset único. DICOM SR é um formato possível de referência, não um requisito universal nem uma garantia de diagnóstico confirmado. Cada dataset terá um mapeamento documentado para o esquema comum, com campos indisponíveis explicitamente assinalados.
 
-- Os labels são de paciente; o prompt pedia classificação das regiões nodulares. Não há crosswalk autorizado entre diagnósticos nodulares e SEG (ex.: LIDC-IDRI-0072 é maligno ao nível do paciente, mas Nodule 1 é benigno; as três SEG são Nodule 1).
-- Métricas com n=2 (balanced accuracy 1.0, AUROC 1.0) não são evidência de desempenho.
-- Só existe um par completo sem/com overlay; não permite concluir sobre benefício do overlay.
-- O objetivo real não é benigno/maligno nem overlay.
+## 2. Preservar o piloto anterior
 
-O piloto fica como teste técnico do pipeline. Não foi feita validação diagnóstica.
+Run `exp-lidc_idri_pilot-60994d3b`: dois pacientes, quatro pedidos, três sucessos e uma falha `connector_error:http_5xx`. Classificação benigno/maligno com e sem overlay, avaliada contra labels de paciente.
 
-## 2. Objetivo
+Só um par está completo. Balanced accuracy e AUROC de 1.0 no subset não validam desempenho nodular. LIDC-IDRI-0072 tem diagnóstico maligno de paciente e benigno para Nodule 1; não existe crosswalk clínico autorizado para as SEG identificadas como Nodule 1.
 
-Medir a viabilidade de um LLM geral produzir, a partir de estudos sem anotações, um relatório estruturado de nódulos pulmonares que concorde com as anotações dos radiologistas (SR do LIDC). O planeador que encaminha para modelos especializados fica para uma fase posterior.
+Preservar inputs, respostas, falha, accounting e métricas como evidência histórica. Não reinterpretar ou sobrescrever a execução.
 
-## 3. Papel de cada artefacto
+## 3. Imagens, SEG e seleção de cortes
 
-| Artefacto | Papel |
+- CT renderizada sem overlays: input do modelo.
+- SEG: seleção experimental dos cortes e apoio ao alinhamento espacial, quando verificado.
+- SR/source annotations: referência escondida, nunca input do modelo.
+- Diagnóstico de paciente: separado de características e de diagnóstico confirmado de lesão.
+
+Seleção pela SEG é uma condição assistida por referência: avalia descrição em cortes relevantes, não deteção autónoma num estudo completo. Não constitui um limite superior matemático garantido.
+
+Amostragem uniforme sem SEG e número de cortes são análises adicionais possíveis, não requisitos para implementar já. Não há comparação com/sem overlay no desenho principal. Custos, limites da API e desempenho com diferentes volumes de imagem devem ser avaliados separadamente.
+
+## 4. Proveniência e anotações individuais
+
+Auditar a cadeia source annotation -> grupo SR -> SEG/segmento -> CT -> lesão física. Não assumir que os SR estão descarregados.
+
+Distinguir objeto SEG, segmento, anotação e lesão. Partilhar o rótulo Nodule 1 ou ter SOPInstanceUIDs distintos não prova identidade de lesão nem leitores diferentes. Geometria pode apoiar uma hipótese, mas não substitui proveniência explícita.
+
+Há potencialmente várias anotações por lesão; não assumir quatro disponíveis em cada caso. Verificar identificadores de leitor/sessão e se são estáveis entre casos. Na ausência de identificação, escrever que a identidade não é recuperável dos ficheiros inspecionados, sem concluir que foi deliberadamente removida.
+
+## 5. Núcleo de campos e extensões
+
+| Campo | Papel e condição |
 |---|---|
-| Imagens CT (cortes) | Input do LLM |
-| SEG | Escolher cortes e alinhar cada relatório ao nódulo do SR; nunca é input do LLM |
-| SR | Referência escondida, usada só na avaliação |
-| Diagnóstico do paciente | Referência separada e mais fraca; não equivale a diagnóstico do nódulo |
+| Lista/contagem de achados | Núcleo; avaliar apenas no âmbito visual e de referência estabelecido |
+| Tipo de achado | Núcleo; vocabulário compatível com a referência |
+| Localização por painel/corte e posição aproximada | Núcleo; coordenadas rastreáveis; anatomia adicional apenas quando avaliável |
+| Atenuação | Núcleo proposto: sólido, parcialmente sólido, não sólido; mapeamento pré-definido por dataset |
+| Tamanho | Condicional: escala fornecida ao modelo e definição de medida compatível |
+| Margem | Extensão; não confundir nitidez com espiculação/lobulação |
+| Espiculação/lobulação | Extensões; verificar proveniência e eventuais correções de codificação |
+| Calcificação | Extensão nominal, não ordinal |
+| Suspeita de malignidade | Exploratória; avaliação subjetiva, não diagnóstico confirmado |
 
-O overlay SEG sai do desenho principal, pois o fluxo final usa estudos sem anotações. Só seria estudado à parte.
+Subtlety, sphericity e internal structure ficam fora do núcleo inicial. Internal structure não deve ser tratada automaticamente como ordinal. Códigos numéricos não implicam ordem natural.
 
-## 4. Seleção de cortes (oráculo)
+Não presumir que milímetros são recuperáveis de uma montagem redimensionada. Distinguir metadados da CT disponíveis ao avaliador da informação efetivamente fornecida ao modelo.
 
-No fluxo real não há SEG. Na experiência, escolher cortes com a SEG é um oráculo: mede a qualidade do relatório quando o LLM recebe cortes relevantes (limite superior), não a deteção em estudo completo.
+Cada campo admite not_assessable, motivo e evidência visual. Esquema final só após auditoria.
 
-Condições sugeridas:
+## 6. Regra das referências
 
-- A: cortes escolhidos pela SEG.
-- B: amostragem uniforme de cortes, sem SEG.
+Análise principal proposta:
+1. Preservar todas as anotações ligadas com evidência à lesão.
+2. Comparar a previsão com cada anotação disponível.
+3. Resumir dentro da lesão, dando peso igual a cada lesão na agregação.
+4. Separar casos com uma e várias anotações; tratar dependência entre lesões do mesmo paciente na incerteza estatística.
 
-A diferença entre A e B indica a dependência de uma etapa de seleção. Testar também o número de cortes como variável.
+Reportar desacordo entre anotações. Não inventar leitores persistentes ou kappas por pares de leitores sem identificação válida.
 
-Deteção em estudo completo não é impossível só por custo/limites de pedido: também há possível degradação com mais imagens e a referência é incompleta (o SR só inclui nódulos de 3 mm ou mais; um achado sem anotação pode ser real). Confirmar na documentação os limites atuais de imagens/tokens do modelo.
+Análise secundária agregada:
+- Ordinais: mediana apenas quando definir uma categoria sem ambiguidade.
+- Nominais: moda única.
+- Empates/medianas entre categorias: referência ambígua, sem arredondamento escolhido após ver a previsão.
 
-## 5. Referência: o que o SR contém
+Não considerar automaticamente correta qualquer previsão dentro do intervalo dos leitores. A referência agregada não é diagnóstico verdadeiro.
 
-DICOM-LIDC-IDRI-Nodules converte as anotações do LIDC em SEG e SR. O pylidc expõe nove características por anotação: subtlety, internalStructure, calcification, sphericity, margin, lobulation, spiculation, texture e malignancy. A maioria usa escala ordinal 1 a 5 (internalStructure: 1 a 4). `malignancy` é avaliação subjetiva do radiologista, não diagnóstico confirmado. Cada nódulo pode ter até quatro leituras, que podem divergir.
+## 7. Emparelhamento, omissões e achados extra
 
-Passo prévio, só leitura: inspecionar os SR já descarregados (campos, ligação às SEG, se os valores por leitor estão preservados).
+Definir antes dos resultados uma correspondência espacial um-para-um com critério de admissibilidade e limiar, não apenas escolher sempre o vizinho mais próximo. Usar coordenadas/cortes e outras evidências disponíveis; correspondências ambíguas ficam explícitas.
 
-## 6. Saída estruturada do LLM
+Comparar atributos nos pares admissíveis, mas reportar também:
+- lesões de referência sem previsão (omissões);
+- previsões sem correspondência;
+- duplicações;
+- erro de contagem, quando a referência suportar contagem no âmbito avaliado.
 
-Campos derivados dos atributos realmente disponíveis no SR, por exemplo: nódulo presente, diâmetro estimado, textura, margem, espiculação, lobulação, calcificação, suspeita de malignidade, incerteza/não avaliável. Os campos e valores finais devem sair da inspeção dos dados.
+Uma previsão extra não desaparece por se escolher a melhor correspondência. Contudo, não anotado não significa ausente: chamar falso positivo confirmado apenas quando a referência/revisão o suportar. Separar achados extra não verificáveis.
 
-Permitir `não avaliável` como resposta válida.
+A lógica sensibilidade + falsos positivos por exame tem precedente no LUNA16; não afirmar implementação equivalente ao protocolo FROC sem satisfazer os seus requisitos. Não estimar especificidade de exemplos apenas positivos ou sem unidade negativa definida.
 
-## 7. Comparação de resultados
+## 8. Métricas
 
-1. Alinhar cada relatório a um nódulo do SR (via SEG); definir regra para múltiplos nódulos descritos.
-2. Métricas por tipo de campo:
+| Tipo | Avaliação proposta |
+|---|---|
+| Ordinal | Concordância exata, matriz de confusão, distância absoluta média em categorias; ±1 nível como análise secundária explícita |
+| Nominal | Concordância exata e matriz de confusão |
+| Contínuo | Erro absoluto, viés; Bland-Altman e ICC com especificação adequada quando amostra/desenho permitirem |
+| Deteção | Sensibilidade, omissões e previsões sem correspondência, respeitando completude da referência |
 
-| Tipo | Exemplo | Métrica |
-|---|---|---|
-| Presença | Nódulo presente | Sensibilidade, especificidade |
-| Contínuo | Diâmetro | Erro absoluto (mm), viés |
-| Ordinal | Espiculação, margem, textura | Diferença absoluta média; % dentro de ±1 nível |
-| Categórico | Calcificação | Accuracy, matriz de confusão |
-| Suspeita de malignidade | malignancy 1-5 | Spearman, diferença absoluta |
+Distâncias entre categorias ordinais são uma convenção a explicitar. Kappa ponderado linear é complemento contra referência agregada ordinal definida, sujeito a amostra/distribuição adequadas. Spearman mede associação e não substitui concordância. Não concatenar pares LLM-anotação como observações independentes de dois leitores fixos.
 
-3. Leitores: escolher a regra antes de ver resultados (por defeito, mediana dos leitores na análise principal; variação inter-leitor como contexto). Medir a concordância de cada radiologista com os restantes como linha de base humana.
-4. Mostrar intervalos de confiança; incluir baselines (resposta mais comum por campo; repetição do mesmo prompt para consistência).
-5. Falhas e `não avaliável` não contam como acerto nem erro; reportar cobertura à parte.
+Apresentar intervalos de confiança apropriados à dependência por paciente, denominadores e baselines fixados sem usar resultados do teste. Repetições medem consistência, não substituem uma baseline preditiva.
 
-## 8. Contribuição esperada
+Reportar em conjunto: concordância entre respostas avaliáveis, cobertura por campo, abstinências, falhas técnicas e referências sem resposta utilizável. Não ocultar omissões em scores apenas condicionais ao sucesso.
 
-- Perfil de concordância por campo (o que o LLM descreve bem e mal).
-- Comparação com a variabilidade entre radiologistas.
-- Efeito do número de cortes.
-- Fiabilidade do relatório (não avaliável, contradições, achados inventados, consistência entre repetições).
+## 9. Literatura de apoio
 
-Não encontrei, numa pesquisa curta, um estudo que compare campo a campo o relatório de um LLM geral com o SR do LIDC em TC pulmonar; verificar com pesquisa dirigida antes de afirmar novidade.
+- Vanbelle, Hernandez Engelhart e Blix (2024), A comprehensive guide to study the agreement and reliability of multi-observer ordinal data. DOI: 10.1186/s12874-024-02431-y. Base para concordância ordinal, ponderações e desenho multi-observador.
+- Pedrosa et al., LNDb: A Lung Nodule Database on Computed Tomography. arXiv:1911.08434. Precedente para concordância de características nodulares e distinção entre campos nominais/ordinais; explicita limitações de identidade dos leitores do LIDC.
+- Zhu et al., How Well Do Multi-modal LLMs Interpret CT Scans? An Auto-Evaluation Framework for Analyses. arXiv:2403.05680. GPTRadScore: comparação de descrições por parte do corpo, localização e tipo; não resolve por si só deteção exaustiva ou penalização de achados extra.
+- Mao et al. (2025), Assessments of lung nodules by an artificial intelligence chatbot using longitudinal CT images. DOI: 10.1016/j.xcrm.2025.101988. Precedente para atributos, ICC e Bland-Altman. Fornece coordenadas/tamanho inicial para tracking e usa preparação com exemplos: não equivale ao nosso cenário sem pistas. Não desenhou experiência específica de múltiplos nódulos.
+- Huang et al. (2025), Unveiling large multimodal models in pulmonary CT: A comparative assessment of generative AI performance in lung cancer diagnostics. DOI: 10.1002/VIW.20250077. Descrições por dimensão, repetições e discrepâncias com relatórios humanos.
+- Khovanova et al. (2026), A comparative accuracy study of multimodal LLMs, VLM and agent-based framework for pulmonary nodule detection on chest radiographs. DOI: 10.3389/fdgth.2025.1674835. Começou com 100 exames, avaliou 83 após exclusões técnicas; alucinações dos relatórios não afetaram o endpoint binário. Não é comparação detalhada de relatórios.
+- Suh et al. (2024), Comparing Diagnostic Accuracy of Radiologists versus GPT-4V and Gemini Pro Vision Using Image Inputs from Diagnosis Please Cases. DOI: 10.1148/radiol.240273. Diagnóstico diferencial com repetições; critérios de acerto não equivalem a qualidade de descrição.
+- LUNA16, protocolo de avaliação: https://luna16.grand-challenge.org/Evaluation/ . Inspiração para avaliar deteção e achados extra, não protocolo adotado automaticamente.
 
-## 9. Literatura inicial (a confirmar nos artigos)
+Os cinco PDFs fornecidos foram consultados através do texto extraído; isso não equivale a validação integral de todos os suplementos e resultados. Confirmar tabelas, condições experimentais e referências antes da submissão. Não há ainda uma revisão sistemática nem uma alegação demonstrada de novidade.
 
-- Comparação de MLLMs na deteção de nódulos em radiografias de tórax (PMC12887855): Gemini 2.0 Pro Experimental com accuracy 0.602 e sensibilidade 0.316.
-- Large multimodal models em TC pulmonar (VIEW, 2025; doi.org/10.1002/VIW.20250077): AUC 0.61 com um corte para Gemini e Claude; accuracy desceu com mais cortes ou história clínica; houve dados inventados.
-- GPTRadScore (arXiv 2403.05680; PMC12478437): GPT-4V e Gemini Pro Vision melhores que outros modelos, mas localização de 17.1% e 14%.
-- GPT-4o em nódulos pulmonares longitudinais (Cell Reports Medicine, 2025): accuracy 0.88 para malignidade e ICC 0.91 para tamanho; desenho longitudinal, não diretamente comparável.
-- RSNA Radiology, radiologistas vs GPT-4V e Gemini Pro Vision (10.1148/radiol.240273): resultados ainda por ler.
+## 10. Auditoria local e próximos passos
 
-Por pesquisar: revisão sistemática de LLMs multimodais em imagiologia; literatura sobre encaminhamento/triagem de exames.
+Executar primeiro uma inspeção em inglês, só de leitura, dos dois pacientes: CT/SEG/SR, anotações-fonte e manifestos locais. Sem inferência, rede, downloads, instalações, alterações ao pipeline, evaluate/report, staging ou commits. No máximo um novo relatório Markdown fora de artifacts/runs e artifacts/results; não sobrescrever nada.
 
-## 10. Próximos passos
+O relatório deve incluir inventário, atributos crus/códigos/unidades, caminhos na árvore SR, ligações verificadas, identidade de leitores recuperável ou não, discrepância clínica, completude da referência e matriz de viabilidade dos campos. Separar verificado, inferido e não resolvido; continuar verificações independentes perante bloqueios. Não interpretar imagens clinicamente.
 
-1. Inspecionar SR e SEG descarregados (só leitura, sem chamadas ao modelo).
-2. Fixar campos, regra de leitores e regra de alinhamento antes de ver resultados.
-3. Ler os artigos da secção 9.
-4. Só depois: novos prompts, schema de saída e avaliador.
-5. Fase posterior: planeador.
+Depois: fixar esquema, correspondência, regra de referência e métricas antes de novas respostas do modelo. Só então alterar prompts/avaliador e planear tamanho amostral e eventual segundo dataset. Esta revisão documental não autoriza essas ações.
